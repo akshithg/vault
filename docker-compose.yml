@@ -1,0 +1,36 @@
+services:
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault-server
+    networks:
+      - default
+      - acme-net
+    dns:
+      - 172.30.0.2
+    # Workaround for Alpine/musl DNS issues - add /etc/hosts entries
+    extra_hosts:
+      - "test.example.com:172.30.0.2"
+      - "vault-test.example.com:172.30.0.2"
+      - "*.example.com:172.30.0.2"
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: server -dev -dev-root-token-id="root"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  default:
+    driver: bridge
+  acme-net:
+    external: true
+    name: acme-net
